@@ -45,7 +45,7 @@ export async function checkHttp(address) {
       if (i < RETRIES) await sleep(RETRY_DELAY);
     }
   }
-  let startGet = Date.now(); = Date.now();
+  let startGet = Date.now(); 
   try {
     const res = await axios({
       method: 'get',

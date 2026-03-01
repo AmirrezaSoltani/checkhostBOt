@@ -21,7 +21,7 @@ const subscriptionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-subscriptionSchema.index({ chatId: 1 });
+
 subscriptionSchema.index({ enabled: 1 });
 
 export const Subscription = mongoose.model('Subscription', subscriptionSchema);

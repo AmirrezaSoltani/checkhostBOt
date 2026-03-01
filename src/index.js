@@ -16,6 +16,12 @@ async function main() {
   await connectDb();
 
   const bot = createBot();
+  await bot.api.setMyCommands([
+    { command: 'start', description: 'شروع' },
+    { command: 'help', description: 'راهنما' },
+    { command: 'status', description: 'وضعیت هدف\u200cها' },
+    { command: 'add', description: 'افزودن هدف' },
+  ]);
   bot.catch((err) => logger.error({ err }, 'Bot error'));
   await bot.start({
     onStart: (info) => logger.info({ username: info.username }, 'Bot started'),

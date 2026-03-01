@@ -59,6 +59,7 @@ async function checkAllTargets() {
         { _id: target._id },
         {
           lastCheckedAt: new Date(),
+          lastStatus: 'down',
           lastError: err.message || String(err),
         }
       );
