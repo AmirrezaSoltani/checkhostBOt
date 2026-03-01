@@ -93,13 +93,15 @@ export function createBot() {
   });
 
   function formatTargetLine(t) {
-    const name = escapeMdSimple(t.name || t.address);
     const addr = escapeMdSimple(t.address);
     const emoji = t.lastStatus === 'up' ? '🟢' : t.lastStatus === 'down' ? '🔴' : '⚪';
     const statusText = t.lastStatus === 'unknown' && !t.lastCheckedAt
       ? 'unknown (هنوز چک نشده)'
       : (t.lastStatus || 'unknown');
-    let s = `${emoji} *${name}* - \`${addr}\`\n`;
+    const title = t.name && t.name.trim() && t.name !== t.address
+      ? `${escapeMdSimple(t.name)} - \`${addr}\``
+      : `\`${addr}\``;
+    let s = `${emoji} *${title}*\n`;
     s += `وضعیت: ${statusText}`;
     if (t.lastCheckedAt) s += ` | چک: ${new Date(t.lastCheckedAt).toISOString()}`;
     if (t.lastLatencyMs != null) s += ` | ${t.lastLatencyMs}ms`;

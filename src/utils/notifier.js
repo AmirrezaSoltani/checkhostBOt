@@ -41,7 +41,7 @@ function isInQuietHours(sub) {
 
 function shouldNotify(sub, targetId, toStatus) {
   if (!sub.enabled) return false;
-  if (sub.onlyChanges !== false && sub.targetFilter?.mode === 'selected') {
+  if (sub.targetFilter?.mode === 'selected') {
     const ids = sub.targetFilter.targetIds || [];
     if (ids.length && !ids.some((id) => String(id) === String(targetId))) return false;
   }

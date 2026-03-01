@@ -22,7 +22,6 @@ function normalizeUrl(address) {
  */
 export async function checkHttp(address) {
   const url = normalizeUrl(address);
-  let lastError = '';
   for (let i = 0; i <= RETRIES; i++) {
     try {
       const start = Date.now();
@@ -33,41 +32,38 @@ export async function checkHttp(address) {
         maxRedirects: 5,
         validateStatus: () => true,
       });
-      const latencyMs = Date.now() - start;
       return {
         status: res.status < 500 ? 'up' : 'down',
-        latencyMs,
+        latencyMs: Date.now() - start,
         httpStatus: res.status,
         error: null,
       };
     } catch (err) {
-      lastError = err.code || err.message || String(err);
-      if (i < RETRIES) await sleep(RETRY_DELAY);
+      if (i < RETRIES) { await sleep(RETRY_DELAY); continue; }
+      const startGet = Date.now();
+      try {
+        const res = await axios({
+          method: 'get',
+          url,
+          timeout: HTTP_TIMEOUT,
+          maxRedirects: 5,
+          validateStatus: () => true,
+        });
+        return {
+          status: res.status < 500 ? 'up' : 'down',
+          latencyMs: Date.now() - startGet,
+          httpStatus: res.status,
+          error: null,
+        };
+      } catch (getErr) {
+        return {
+          status: 'down',
+          latencyMs: Date.now() - startGet,
+          httpStatus: null,
+          error: getErr.code || getErr.message || String(getErr),
+        };
+      }
     }
-  }
-  let startGet = Date.now(); 
-  try {
-    const res = await axios({
-      method: 'get',
-      url,
-      timeout: HTTP_TIMEOUT,
-      maxRedirects: 5,
-      validateStatus: () => true,
-    });
-    const latencyMs = Date.now() - startGet;
-    return {
-      status: res.status < 500 ? 'up' : 'down',
-      latencyMs,
-      httpStatus: res.status,
-      error: null,
-    };
-  } catch (err) {
-    return {
-      status: 'down',
-      latencyMs: Date.now() - startGet,
-      httpStatus: null,
-      error: err.code || err.message || String(err),
-    };
   }
 }
 
@@ -80,42 +76,33 @@ function sleep(ms) {
  */
 export function checkTcp(host, port) {
   return new Promise((resolve) => {
+    let resolved = false;
     const start = Date.now();
-    const timer = setTimeout(() => {
-      socket.destroy();
-      resolve({
-        status: 'down',
-        latencyMs: TCP_TIMEOUT,
-        httpStatus: null,
-        error: 'Timeout',
-      });
-    }, TCP_TIMEOUT);
 
-    const socket = createConnection(
-      { host, port },
-      () => {
-        clearTimeout(timer);
-        const latencyMs = Date.now() - start;
-        socket.destroy();
-        resolve({
-          status: 'up',
-          latencyMs,
-          httpStatus: null,
-          error: null,
-        });
-      }
-    );
+    const done = (result) => {
+      if (resolved) return;
+      resolved = true;
+      clearTimeout(timer);
+      socket.destroy();
+      resolve(result);
+    };
+
+    const socket = createConnection({ host, port }, () => {
+      done({ status: 'up', latencyMs: Date.now() - start, httpStatus: null, error: null });
+    });
 
     socket.on('error', (err) => {
-      clearTimeout(timer);
-      const latencyMs = Date.now() - start;
-      resolve({
+      done({
         status: 'down',
-        latencyMs,
+        latencyMs: Date.now() - start,
         httpStatus: null,
         error: err.code || err.message || String(err),
       });
     });
+
+    const timer = setTimeout(() => {
+      done({ status: 'down', latencyMs: TCP_TIMEOUT, httpStatus: null, error: 'Timeout' });
+    }, TCP_TIMEOUT);
   });
 }
 

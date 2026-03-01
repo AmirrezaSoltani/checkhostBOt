@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import express from 'express';
 import { Target, Event } from '../db/index.js';
 import { config } from '../config/env.js';
@@ -88,9 +89,16 @@ export function createApi() {
 
   app.get('/events', async (req, res) => {
     try {
-      const targetId = req.query.targetId;
+      const { targetId } = req.query;
       const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 50));
-      const q = targetId ? { targetId } : {};
+      const q = {};
+      if (targetId) {
+        if (!mongoose.isValidObjectId(targetId)) {
+          res.status(400).json({ error: 'Invalid targetId' });
+          return;
+        }
+        q.targetId = targetId;
+      }
       const list = await Event.find(q).lean().sort({ at: -1 }).limit(limit);
       res.json({ events: list });
     } catch (err) {
@@ -107,6 +115,5 @@ export function startApi(app) {
       logger.info({ port: config.API_PORT }, 'API server listening');
       resolve(server);
     });
-    return server;
   });
 }

@@ -44,12 +44,14 @@ async function checkAllTargets() {
           error: result.error,
         });
 
-        await notifySubscriptionsOnChange({
-          target: { ...target, ...update },
-          fromStatus: lastStatus,
-          toStatus: currentStatus,
-          result,
-        });
+        if (lastStatus !== 'unknown') {
+          await notifySubscriptionsOnChange({
+            target: { ...target, ...update },
+            fromStatus: lastStatus,
+            toStatus: currentStatus,
+            result,
+          });
+        }
       } else {
         await Target.updateOne({ _id: target._id }, update);
       }

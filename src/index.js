@@ -23,9 +23,6 @@ async function main() {
     { command: 'add', description: 'افزودن هدف' },
   ]);
   bot.catch((err) => logger.error({ err }, 'Bot error'));
-  await bot.start({
-    onStart: (info) => logger.info({ username: info.username }, 'Bot started'),
-  });
 
   startScheduler();
 
@@ -35,7 +32,7 @@ async function main() {
   const shutdown = async (signal) => {
     logger.info({ signal }, 'Shutting down');
     stopScheduler();
-    if (bot) await bot.stop();
+    await bot.stop();
     if (apiServer) await new Promise((r) => apiServer.close(r));
     await disconnectDb();
     process.exit(0);
@@ -43,6 +40,11 @@ async function main() {
 
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('SIGTERM', () => shutdown('SIGTERM'));
+
+  // bot.start() blocks (long polling) — must be last
+  await bot.start({
+    onStart: (info) => logger.info({ username: info.username }, 'Bot started'),
+  });
 }
 
 main().catch((err) => {

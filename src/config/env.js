@@ -6,8 +6,7 @@ function parseAdminChatIds(value) {
   return value
     .split(',')
     .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => (s.includes('-') ? s : Number(s)));
+    .filter(Boolean);
 }
 
 export const config = {
