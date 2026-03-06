@@ -18,12 +18,14 @@ const BTN_NOTIFY_OFF = '🔕 اعلان خاموش';
 const BTN_PAUSE_ALL = '⏸ توقف چک همه';
 const BTN_RESUME_ALL = '▶️ شروع چک همه';
 const BTN_CHECK_LIST = '📋 لیست چک هدف\u200cها';
+const BTN_REMOVE = '🗑 حذف هدف';
 
 function replyKeyboard() {
   const kb = new Keyboard()
     .text(BTN_REPORT)
     .text(BTN_STATUS).row()
-    .text(BTN_ADD).row()
+    .text(BTN_ADD)
+    .text(BTN_REMOVE).row()
     .text(BTN_NOTIFY_ON)
     .text(BTN_NOTIFY_OFF).row()
     .text(BTN_PAUSE_ALL)
@@ -224,6 +226,25 @@ export function createBot() {
       }
     }
     if (isAdmin(ctx.chat.id)) text += '_برای تغییر: روی دستور بالا بزنید یا کپی کنید._';
+    await ctx.reply(text, { parse_mode: 'Markdown' });
+  });
+
+  bot.hears(BTN_REMOVE, async (ctx) => {
+    if (!isAdmin(ctx.chat.id)) {
+      await ctx.reply('دسترسی مجاز نیست.');
+      return;
+    }
+    const targets = await Target.find({}).lean().sort({ createdAt: 1 });
+    if (!targets.length) {
+      await ctx.reply('هنوز هدفی ثبت نشده.');
+      return;
+    }
+    let text = '🗑 *حذف هدف*\n\nبرای حذف، روی دستور زیر هر هدف بزنید:\n\n';
+    for (const t of targets) {
+      const name = escapeMdSimple((t.name || t.address).slice(0, 45));
+      text += `• ${name}\n   \`/remove ${t._id}\`\n\n`;
+    }
+    text += '_با زدن دستور بالا، آن هدف حذف می\u200cشود._';
     await ctx.reply(text, { parse_mode: 'Markdown' });
   });
 

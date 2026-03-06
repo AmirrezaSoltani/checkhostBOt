@@ -6,6 +6,7 @@ import { escapeMdSimple } from './escapeMd.js';
 
 const RATE_LIMIT_MS = config.NOTIFY_RATE_LIMIT_MS;
 const QUIET_TZ = config.QUIET_HOURS_TIMEZONE;
+const ADMIN_CHAT_IDS = new Set((config.ADMIN_CHAT_IDS || []).map(String));
 
 let sendMessageFn = null;
 
@@ -40,6 +41,7 @@ function isInQuietHours(sub) {
 }
 
 function shouldNotify(sub, targetId, toStatus) {
+  if (ADMIN_CHAT_IDS.size === 0 || !ADMIN_CHAT_IDS.has(String(sub.chatId))) return false;
   if (!sub.enabled) return false;
   if (sub.targetFilter?.mode === 'selected') {
     const ids = sub.targetFilter.targetIds || [];
