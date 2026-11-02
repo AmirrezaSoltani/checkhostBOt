@@ -1,25 +1,31 @@
 # CheckHost Bot
 
-ربات تلگرام برای مانیتورینگ دسترسی (Reachability) سایت‌ها و IPها با اعلان **فقط هنگام تغییر وضعیت** (Up↔Down).
+A Telegram bot that monitors the **reachability of websites and IP addresses** and sends a notification **only when the status changes** (Up ↔ Down).
 
-## قابلیت‌ها
+![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-- چک **URL/Domain** با HTTP(S) (HEAD/GET) و timeout
-- چک **IP** با TCP connect روی پورت مشخص (۸۰/۴۴۳/۲۲ یا دلخواه)
-- ذخیره آخرین وضعیت در **MongoDB**
-- اعلان تلگرام فقط وقتی وضعیت عوض شد
-- خاموش/روشن کردن اعلان‌ها، ساعات سکوت، فیلتر Up/Down
-- Docker + docker-compose
+## Features
 
-## نیازمندی‌ها
+- **URL/Domain checks** over HTTP(S) (HEAD/GET) with configurable timeout
+- **IP checks** via TCP connect on a given port (80 / 443 / 22 or custom)
+- Last known status persisted in **MongoDB**
+- Telegram alerts **only on state changes** (no spam)
+- Per-chat notification settings: on/off, quiet hours, Up/Down filters
+- Optional **REST API** (Express) for managing targets and reading event history
+- Ready to deploy with **Docker + docker-compose**
 
-- Node.js 20+ (یا فقط Docker)
+## Requirements
+
+- Node.js 20+ (or just Docker)
 - MongoDB
-- توکن ربات از [@BotFather](https://t.me/BotFather)
+- A bot token from [@BotFather](https://t.me/BotFather)
 
-## اجرا با Docker (پیشنهادی)
+## Run with Docker (recommended)
 
-1. فایل `.env` در ریشه پروژه بسازید:
+1. Create a `.env` file in the project root:
 
 ```env
 BOT_TOKEN=123456:ABC...
@@ -28,15 +34,15 @@ CHECK_INTERVAL_SECONDS=60
 API_TOKEN=optional-secret-for-api
 ```
 
-2. اجرا:
+2. Start the stack:
 
 ```bash
 docker compose up -d
 ```
 
-3. در تلگرام ربات را استارت کنید (`/start`) و در صورت نیاز با `/add url https://example.com` یا `/add ip 8.8.8.8` هدف اضافه کنید (فقط برای چت‌های ادمین).
+3. Open the bot in Telegram and send `/start`. Admin chats can add targets with `/add url https://example.com` or `/add ip 8.8.8.8`.
 
-## اجرا بدون Docker
+## Run without Docker
 
 ```bash
 npm install
@@ -45,74 +51,74 @@ export MONGO_URI=mongodb://localhost:27017/checkhostbot
 npm start
 ```
 
-## دستورات ربات
+## Bot commands
 
-| دستور | توضیح |
+| Command | Description |
 |--------|--------|
-| `/start` | ثبت چت و راهنما |
-| `/help` | لیست دستورات |
-| `/status` | وضعیت همه هدف‌ها |
-| `/status <name\|id>` | وضعیت یک هدف |
-| `/notify on \| off` | روشن/خاموش اعلان |
-| `/notify up on \| off` | اعلان وقتی Up شد |
-| `/notify down on \| off` | اعلان وقتی Down شد |
-| `/notify changes on \| off` | فقط روی تغییر |
-| `/quiet on 23:00 07:00` | ساعات سکوت |
-| `/quiet off` | خاموش کردن ساعات سکوت |
+| `/start` | Register the chat and show help |
+| `/help` | List all commands |
+| `/status` | Status of all targets |
+| `/status <name\|id>` | Status of a single target |
+| `/notify on \| off` | Enable / disable notifications |
+| `/notify up on \| off` | Notify when a target goes Up |
+| `/notify down on \| off` | Notify when a target goes Down |
+| `/notify changes on \| off` | Notify on state changes only |
+| `/quiet on 23:00 07:00` | Set quiet hours |
+| `/quiet off` | Disable quiet hours |
 
-**ادمین (فقط اگر `ADMIN_CHAT_IDS` تنظیم شده باشد):**
+**Admin commands** (only when `ADMIN_CHAT_IDS` is set):
 
-| دستور | توضیح |
+| Command | Description |
 |--------|--------|
-| `/list` | لیست همه هدف‌ها |
-| `/add url <آدرس>` | اضافه کردن URL |
-| `/add ip <آدرس>` | اضافه کردن IP |
-| `/remove <id>` | حذف هدف |
-| `/enable <id>` | فعال کردن |
-| `/disable <id>` | غیرفعال کردن |
+| `/list` | List all targets |
+| `/add url <address>` | Add a URL target |
+| `/add ip <address>` | Add an IP target |
+| `/remove <id>` | Remove a target |
+| `/enable <id>` | Enable a target |
+| `/disable <id>` | Disable a target |
 
-## API (اختیاری)
+## REST API (optional)
 
-اگر `API_PORT` و در صورت نیاز `API_TOKEN` تنظیم شود:
+Enabled when `API_PORT` (and optionally `API_TOKEN`) is set:
 
-- `GET /health` — سلامت سرویس
-- `GET /targets` — لیست هدف‌ها
-- `POST /targets` — ایجاد هدف (body: type, address, name?, checkMethod?, tcpPort?, intervalSeconds?, enabled?)
-- `PATCH /targets/:id` — به‌روزرسانی
-- `DELETE /targets/:id` — حذف
-- `GET /events?targetId=...&limit=50` — تاریخچه رویدادها
+- `GET /health` — service health check
+- `GET /targets` — list targets
+- `POST /targets` — create a target (body: `type, address, name?, checkMethod?, tcpPort?, intervalSeconds?, enabled?`)
+- `PATCH /targets/:id` — update a target
+- `DELETE /targets/:id` — delete a target
+- `GET /events?targetId=...&limit=50` — event history
 
-احراز هویت: هدر `Authorization: Bearer <API_TOKEN>` یا `?token=<API_TOKEN>`.
+Authentication: `Authorization: Bearer <API_TOKEN>` header or `?token=<API_TOKEN>`.
 
-## متغیرهای محیطی
+## Environment variables
 
-| متغیر | پیش‌فرض | توضیح |
+| Variable | Default | Description |
 |--------|---------|--------|
-| `BOT_TOKEN` | — | توکن ربات (الزامی) |
-| `MONGO_URI` | `mongodb://localhost:27017/checkhostbot` | اتصال MongoDB |
-| `CHECK_INTERVAL_SECONDS` | 60 | فاصله چک (ثانیه) |
-| `HTTP_TIMEOUT_MS` | 5000 | تایم‌اوت HTTP |
-| `TCP_TIMEOUT_MS` | 3000 | تایم‌اوت TCP |
-| `ADMIN_CHAT_IDS` | — | چت‌آیدی ادمین‌ها (جداشده با کاما) |
-| `API_PORT` | 3000 | پورت API |
-| `API_TOKEN` | — | توکن اختیاری برای API |
-| `QUIET_HOURS_TIMEZONE` | Europe/Berlin | منطقه زمانی ساعات سکوت |
-| `LOG_LEVEL` | info | سطح لاگ |
+| `BOT_TOKEN` | — | Telegram bot token (required) |
+| `MONGO_URI` | `mongodb://localhost:27017/checkhostbot` | MongoDB connection string |
+| `CHECK_INTERVAL_SECONDS` | 60 | Check interval (seconds) |
+| `HTTP_TIMEOUT_MS` | 5000 | HTTP timeout |
+| `TCP_TIMEOUT_MS` | 3000 | TCP timeout |
+| `ADMIN_CHAT_IDS` | — | Admin chat IDs (comma-separated) |
+| `API_PORT` | 3000 | API port |
+| `API_TOKEN` | — | Optional API token |
+| `QUIET_HOURS_TIMEZONE` | Europe/Berlin | Time zone for quiet hours |
+| `LOG_LEVEL` | info | Log level |
 
-## ساختار پروژه
+## Project structure
 
 ```
 src/
-  bot/          ربات تلگرام (grammY)
-  monitor/      چک و زمان‌بندی
-  db/           مدل‌های MongoDB
-  config/       env و logger
-  utils/        notifier، rate limiter
-  api/          Express API
+├── bot/        Telegram bot (grammY)
+├── monitor/    Checks and scheduling
+├── db/         MongoDB models
+├── config/     Env config and logger
+├── utils/      Notifier, rate limiter
+└── api/        Express API
 Dockerfile
 docker-compose.yml
 ```
 
-## لایسنس
+## License
 
 MIT
